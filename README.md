@@ -3,3 +3,4 @@
 how to use react-native-video
 
 branch - 1 setup & background video
+branch -2 video error

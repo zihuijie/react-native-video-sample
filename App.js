@@ -1,27 +1,54 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
-
 import React, { Component } from 'react';
 import {
   StyleSheet,
   Text,
-  View
+  View,
+  Dimensions
 } from 'react-native';
 
 import Video from 'react-native-video';
 import LightVideo from './lights.mp4';
 
+import Icon from 'react-native-vector-icons/FontAwesome';
+
 export default class App extends Component<{}> {
+
+  state = {
+    error: false
+  };
+handleError = (meta) => {
+  const { error: { code }} = meta;
+  let error = "An error occurred playing this video";
+
+  switch(code) {
+    case -11800:
+      error = "Could not load video from URL";
+      break;
+  }
+  this.setState({
+    error
+  });
+}
   render() {
+    const { width } = Dimensions.get("window");
+    const height = width * 0.5625;
+  const { error } = this.state;
     return (
       <View style={styles.container}>
-        <Video source={LightVideo}
-        resizeMode="cover"
-        style={StyleSheet.absoluteFill}
-        />
+      <View style={error ? styles.error : undefined}>
+      <Video source={{ uri: "http://google.com/notavideo"}}
+      resizeMode="contain"
+      style={{ width: "100%", height }}
+      onError={this.handleError}
+      />
+      <View style={styles.videoCover}>
+      { error && <Icon name="exclamation-triangle" size={30} color="red" />}
+      {
+        error && <Text>{error}</Text>
+      }
+      </View>
+
+      </View>
       </View>
     );
   }
@@ -30,18 +57,19 @@ export default class App extends Component<{}> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    paddingTop: 250,
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+  videoCover: {
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, .9)",
   },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
+  error: {
+    backgroundColor:"#000",
   },
 });
