@@ -9,3 +9,5 @@ branch-4 Looping background video
         Textinput
 
 branch-5 Auto play scroll view
+
+branch-6 custom controls

@@ -4,59 +4,95 @@ import {
   Text,
   View,
   ScrollView,
-  Dimensions
+  Dimensions,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
 import Video from 'react-native-video';
 import LightVideo from './lights.mp4';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import ProgressBar from 'react-native-progress/Bar';
 
-const THRESHOLD = 100;
-
+function secondsToTime(time) {
+  return ~~(time / 60) + ":" + (time % 60 < 10 ? "0" : "") + time % 60;
+}
 export default class App extends Component<{}> {
 state = {
-  paused: true
-};
-position = {
-  start: null,
-  end: null,
+  paused: false,
+  progress: 0,
+  duration: 0,
 };
 
-handleVideoLayout = (e) => {
-  const { height } = Dimensions.get("window");
-  this.position.start = e.nativeEvent.layout.y - height + THRESHOLD;
-  this.position.end = e.nativeEvent.layout.y + e.nativeEvent.layout.height - THRESHOLD;
-}
-handleScroll = (e) => {
-  const scrollPosition = e.nativeEvent.contentOffset.y;
-  const paused = this.state.paused;
-  const { start, end } = this.position;
-
-  if (scrollPosition > start && scrollPosition < end && paused) {
-    this.setState({ paused: false });
-  } else if ((scrollPosition > end || scrollPosition < start) && !paused) {
-    this.setState({ paused: true })
+handleMainButtonTouch = () => {
+  if (this.state.progress >= 1 ) {
+    this.player.seek(0);
   }
+  this.setState(state => {
+    return {
+      paused: !state.paused
+    }
+  })
 }
+
+handleProgressPress = (e) => {
+const position = e.nativeEvent.locationX;
+const progress = (position / 250) * this.state.duration;
+this.player.seek(progress);
+}
+handleEnd = () => {
+  this.setState({ paused: true })
+}
+handleProgress = (progress) => {
+  this.setState({
+    progress: progress.currentTime / this.state.duration
+  })
+}
+handleLoad = (meta) => {
+this.setState({
+  duration: meta.duration
+})
+}
+
+
   render() {
     const { width } = Dimensions.get("window");
+    const height = width * .5625;
     return (
       <View style={styles.container}>
-      <ScrollView scrollEventThrottle={16}
-      onScroll={this.handleScroll}>
-      <View style={styles.fakeContent}>
-      <Text>{this.state.paused ? "Paused" : "Playing"}</Text>
-      </View>
-        <Video repeat
-        source={LightVideo}
-        paused={this.state.paused}
-        style={{ width, height: 300 }}
-        onLayout={this.handleVideoLayout}
-        />
-        <View style={styles.fakeContent}>
-        <Text>{this.state.paused ? "Paused" : "Playing"}</Text>
+<View>
+
+<Video repeat
+source={LightVideo}
+paused={this.state.paused}
+style={{ width: "100%" , height}}
+resizeMode="contain"
+onLoad={this.handleLoad}
+onProgress={this.handleProgress}
+onEnd={this.handleEnd}
+ref={ref => this.player = ref}
+/>
+<View style={styles.controls}>
+<TouchableWithoutFeedback onPress={this.handleMainButtonTouch}>
+<Icon name={!this.state.paused ? "pause" : "play"}
+size={30} color="#fff" />
+</TouchableWithoutFeedback>
+<TouchableWithoutFeedback onPress={this.handleProgressPress}>
+<View>
+<ProgressBar
+progress={this.state.progress}
+color="#fff"
+unfilledColor="rgba(255,255,255,.5)"
+borderColor="#fff"
+width={250}
+height={20}
+/>
+<Text style={styles.duration}>
+{secondsToTime(Math.floor(this.state.progress * this.state.duration))}</Text>
+</View>
+</TouchableWithoutFeedback>
+</View>
         </View>
 
-        </ScrollView>
       </View>
     );
   }
@@ -65,11 +101,25 @@ handleScroll = (e) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 250
   },
-fakeContent: {
-  height: 850,
-  backgroundColor: '#CCC',
-  paddingTop: 250,
-  alignItems: 'center'
+controls: {
+  backgroundColor: "rgba(0,0,0,0.5)",
+  height: 48,
+  left: 0,
+  bottom: 0,
+  right: 0,
+  position: "absolute",
+  flexDirection: "row",
+  alignItems: 'center',
+  justifyContent: 'space-around',
+  paddingHorizontal: 10,
+},
+mainButton: {
+  marginRight: 15,
+},
+duration: {
+  color: "#fff",
+  marginLeft: 15,
 },
 });
