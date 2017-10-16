@@ -3,49 +3,70 @@ import {
   StyleSheet,
   Text,
   View,
+  Animated,
   Dimensions
 } from 'react-native';
 
 import Video from 'react-native-video';
-import LightVideo from './lights.mp4';
+import Sample from './sample.mp4';
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default class App extends Component<{}> {
 
   state = {
-    error: false
+    buffering: true,
+    animated: new Animated.Value(0)
   };
-handleError = (meta) => {
-  const { error: { code }} = meta;
-  let error = "An error occurred playing this video";
+handleLoadStart = () => {
+  this.triggerBufferAnimation();
+}
 
-  switch(code) {
-    case -11800:
-      error = "Could not load video from URL";
-      break;
+triggerBufferAnimation = () => {
+  this.loopingAnimation = Animated.loop(
+    Animated.timing(this.state.animated, {
+      toValue: 1,
+      duration: 350,
+    })
+  ).start();
+}
+
+handleBuffer = (meta) => {
+  meta.isBuffering && this.triggerBufferAnimation();
+
+  if (this.loopingAnimation && !meta.isBuffering) {
+    this.loopingAnimation.stopAnimation();
   }
   this.setState({
-    error
-  });
+    buffering: meta.isBuffering
+  })
 }
   render() {
     const { width } = Dimensions.get("window");
     const height = width * 0.5625;
-  const { error } = this.state;
+  const { buffering } = this.state;
+  const interpolatedAnimation = this.state.animated.interpolate({
+    inputRange: [0,1],
+    outputRange: ["0deg", "360deg"]
+  });
+
+  const rotateStyle = {
+    transform: [
+      { rotate: interpolatedAnimation },
+    ]
+  }
     return (
       <View style={styles.container}>
-      <View style={error ? styles.error : undefined}>
-      <Video source={{ uri: "http://google.com/notavideo"}}
+      <View style={buffering ? styles.buffering : undefined} >
+      <Video source={Sample}
       resizeMode="contain"
-      style={{ width: "100%", height }}
-      onError={this.handleError}
+      onLoadStart={this.handleLoadStart}
+      onBuffer={this.handleBuffer}
       />
       <View style={styles.videoCover}>
-      { error && <Icon name="exclamation-triangle" size={30} color="red" />}
-      {
-        error && <Text>{error}</Text>
-      }
+     {buffering && <Animated.View style={rotateStyle}>
+      <Icon name="circle-o-notch" size={30} color="#fff" />
+      </Animated.View>}
       </View>
 
       </View>
@@ -67,9 +88,9 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, .9)",
+    backgroundColor: "transparent",
   },
-  error: {
+  buffering: {
     backgroundColor:"#000",
   },
 });
