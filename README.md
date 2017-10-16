@@ -7,3 +7,5 @@ branch-2 video error
 branch-3 Buffer animated
 branch-4 Looping background video
         Textinput
+
+branch-5 Auto play scroll view

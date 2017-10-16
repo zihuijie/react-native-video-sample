@@ -3,37 +3,60 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput
+  ScrollView,
+  Dimensions
 } from 'react-native';
 
 import Video from 'react-native-video';
 import LightVideo from './lights.mp4';
 
+const THRESHOLD = 100;
+
 export default class App extends Component<{}> {
+state = {
+  paused: true
+};
+position = {
+  start: null,
+  end: null,
+};
 
+handleVideoLayout = (e) => {
+  const { height } = Dimensions.get("window");
+  this.position.start = e.nativeEvent.layout.y - height + THRESHOLD;
+  this.position.end = e.nativeEvent.layout.y + e.nativeEvent.layout.height - THRESHOLD;
+}
+handleScroll = (e) => {
+  const scrollPosition = e.nativeEvent.contentOffset.y;
+  const paused = this.state.paused;
+  const { start, end } = this.position;
+
+  if (scrollPosition > start && scrollPosition < end && paused) {
+    this.setState({ paused: false });
+  } else if ((scrollPosition > end || scrollPosition < start) && !paused) {
+    this.setState({ paused: true })
+  }
+}
   render() {
-
+    const { width } = Dimensions.get("window");
     return (
       <View style={styles.container}>
-
-      <Video
-      repeat
-      source={LightVideo}
-      resizeMode="cover"
-      style={StyleSheet.absoluteFill}
-      />
-      <View>
-      <Text style={styles.header}>Login</Text>
-      <TextInput
-      placeholder="Email"
-      style={styles.input}
-      />
-      <TextInput
-      placeholder="Password"
-      secureTextEntry
-      style={styles.input}
-      />
+      <ScrollView scrollEventThrottle={16}
+      onScroll={this.handleScroll}>
+      <View style={styles.fakeContent}>
+      <Text>{this.state.paused ? "Paused" : "Playing"}</Text>
       </View>
+        <Video repeat
+        source={LightVideo}
+        paused={this.state.paused}
+        style={{ width, height: 300 }}
+        onLayout={this.handleVideoLayout}
+        />
+        <View style={styles.fakeContent}>
+        <Text>{this.state.paused ? "Paused" : "Playing"}</Text>
+        </View>
+
+        </ScrollView>
       </View>
     );
   }
@@ -42,29 +65,11 @@ export default class App extends Component<{}> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent:'center',
   },
-  videoCover: {
-    alignItems: "center",
-    justifyContent: "center",
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: "transparent",
-  },
-  header: {
-    fontSize: 30,
-    backgroundColor:"transparent",
-    color: '#fff',
-  },
-  input: {
-    width: 300,
-    height: 50,
-    backgroundColor:'#fff',
-    marginVertical: 15,
-    paddingLeft: 15,
-  }
+fakeContent: {
+  height: 850,
+  backgroundColor: '#CCC',
+  paddingTop: 250,
+  alignItems: 'center'
+},
 });
