@@ -11,3 +11,4 @@ branch-4 Looping background video
 branch-5 Auto play scroll view
 
 branch-6 custom controls
+branch-7 controls hide/show

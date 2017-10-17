@@ -6,6 +6,8 @@ import {
   ScrollView,
   Dimensions,
   TouchableWithoutFeedback,
+  Animated,
+  PanResponder,
 } from 'react-native';
 
 import Video from 'react-native-video';
@@ -23,6 +25,16 @@ state = {
   duration: 0,
 };
 
+animated = new Animated.Value(0);
+
+componentWillMount() {
+  this.PanResponder = PanResponder.create({
+    onMoveShouldSetPanResponderCapture: () => {
+      this.triggerShowHide();
+      return false;
+    }
+  })
+}
 handleMainButtonTouch = () => {
   if (this.state.progress >= 1 ) {
     this.player.seek(0);
@@ -50,16 +62,47 @@ handleProgress = (progress) => {
 handleLoad = (meta) => {
 this.setState({
   duration: meta.duration
-})
+});
 }
 
+handleVideoPress = () => {
+this.triggerShowHide();
+}
 
+triggerShowHide = () => {
+  clearTimeout(this.hideTimeout);
+  Animated.timing(this.animated, {
+    toValue: 1,
+    duration: 100
+  }).start();
+
+  this.hideTimeout = setTimeout(() => {
+    Animated.timing(this.animated,{
+      toValue: 0,
+      duration: 300
+    }).start();
+  }, 1500);
+}
   render() {
     const { width } = Dimensions.get("window");
     const height = width * .5625;
+
+    const interpolatedControls = this.animated.interpolate({
+      inputRange: [0,1],
+      outputRange: [48, 0],
+    })
+
+    const controlHideStyle = {
+      transform:[
+        {
+          translateY: interpolatedControls
+        }
+      ]
+    }
     return (
       <View style={styles.container}>
-<View>
+<View { ...this.PanResponder.panHandlers}
+style={styles.videoContainer}>
 
 <Video repeat
 source={LightVideo}
@@ -71,7 +114,7 @@ onProgress={this.handleProgress}
 onEnd={this.handleEnd}
 ref={ref => this.player = ref}
 />
-<View style={styles.controls}>
+<Animated.View style={[styles.controls,controlHideStyle]}>
 <TouchableWithoutFeedback onPress={this.handleMainButtonTouch}>
 <Icon name={!this.state.paused ? "pause" : "play"}
 size={30} color="#fff" />
@@ -90,7 +133,7 @@ height={20}
 {secondsToTime(Math.floor(this.state.progress * this.state.duration))}</Text>
 </View>
 </TouchableWithoutFeedback>
-</View>
+</Animated.View>
         </View>
 
       </View>
@@ -102,6 +145,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 250
+  },
+  videoContainer: {
+    overflow: "hidden",
   },
 controls: {
   backgroundColor: "rgba(0,0,0,0.5)",
